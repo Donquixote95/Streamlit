@@ -1,113 +1,74 @@
 import streamlit as st
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-import psycopg2
-import httpx
+import pandas as pd
 
-# FastAPI와 PostgreSQL 연결
-app = FastAPI()
-# PostgreSQL 연결 설정
-connection_info = "host=147.47.200.145 dbname=teamdb12 user=team12 password=494196 port=34543"
-conn = psycopg2.connect(connection_info)
+st.title('🔥 초보자 가이드 🐎')
 
-# 경마 정보 조회
-@app.get("/horses")
-def get_horses():
-    try:
-        print("Hello World")
-        # 데이터베이스 쿼리 실행
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM public."2013" LIMIT 10')
-        rows = cursor.fetchall()
-        cursor.close()
+# st.header('초보자가 궁금한 모든 것')
+# 이미지 URL
+image_url = "https://images.unsplash.com/photo-1594768816441-1dd241ffaa67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+# 이미지를 출력
+st.image(image_url)  
 
-        # 경마 정보를 JSON 형식으로 변환하여 반환
-        horses = []
-        for row in rows:
-            horse = {
-                "날짜": row[0],
-                "경기번호": row[1],
-                "순위": row[2],
-                "말id": row[3],
-                "기수id": row[4],
-                "조교사id": row[5]
-            }
-            horses.append(horse)
+with st.expander("마권"):
+    st.markdown("""고객들이 원하는 경주와 베팅 승식, 
+            우승예상마의 마번과 금액 등을 표기하여 돈과 함께 발매창구에 제출하면,
+            이러한 내역이 기재된 표권이 발행되는데 이를 :blue[‘마권’]이라고 합니다.
+            마권은 최소 100원에서부터 최대 :red[10만원]까지 구매할 수 있습니다.
+            마권과 구매권은 각각 1년의 유효기간이 있어, 이 기간 동안에는 현금으로 돌려받을 수 있지만
+            기간이 경과하면 잔액이 남아있어도 환급받을 수 없습니다.
+            최대 구매가능금액 10만원을 구매상한선이라고 하는데, 
+            이러한 상한선을 두는 이유는 고객들이 과도하게 베팅에 몰입하지 않고
+            건전하게 소액으로 경마를 즐길 수 있도록 하기 위해서입니다.""")
+    
+data = {
+    "경마": "말들이 경주하는 스포츠",
+    "경주": "경마에서 말들이 경쟁하는 것",
+    "주행": "경마에서 말이 경주장을 주행하는 것",
+    "배팅": "경마에 참여하여 말에 대한 돈을 거는 것",
+    "공재액" : "총매출액에서 경마시행체 수득금/수수료, 마권세 및 제세 명목으로 공제하는 금액",
+    "휴양마" : "경주 출전을 위해 각 레츠런 파크 내 있는 마방에에 입사한 상태의 말이 아닌 외부 마사에 있는 말로서 어느 특정조와도 위탁계약이 되어있지 않은 상태"
+}
 
-        return horses
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"message": str(e)})
+with st.expander('경마 용어 사전'):
+    selected_term = st.selectbox("용어 선택", list(data.keys()))
+    definition = data[selected_term]
+    st.write("**{}**".format(selected_term))
+    st.write(definition)
 
-if __name__ == "__main__":
-    import uvicorn
-    # uvicorn.run(app, host="147.47.200.145", port=34543) # FastAPI 백엔드 설정 필요
+with st.expander("우승마 추리법"):
+    data = pd.DataFrame({
+        '핵심': ['가까이서 관찰하세요.', '숨어있는 힘까지도', '앞 몸집의 발달을 주의하세요.', '말은 엉덩이가 웅대해야', '목운동을 보세요', '땀을 많이 흘리는 말은 다시 보세요', '꼬리의 형태도 고려하세요', '털의 윤기를 확인하세요', '뒷다리 진입도 유념하세요', '동작을 체크하세요', '눈을 잘 살펴보세요'],
+        '설명': ["마체의 발달 정도, 눈의 생기, 복부의 생김새, 땀 흘리는 정도를 주의깊게 관찰하려면 가까운 거리에서 봐야 합니다. 멀리서 볼 때에는 쌍안경으로 관찰하는 것도 좋은 방법입니다.",
+                "예시장에서는 침착하면서 보행에 힘이 없어 보이지만 막상 경주에서는 성격이 급변하여 투지가 넘치고 기민해지는 예측불허의 말이 있으므로 말의 숨어있는 힘까지도 볼 수 있도록 유심히 관찰해야 합니다.",
+                "마체의 뒷몸집보다는 앞몸집이, 뒷다리보다는 앞다리가 경주마의 능력과 관계가 많습니다. 앞몸집이 발달한 말은 가슴이 넓고, 어깨와 관절사이가 길며, 앞다리는 길고 앞무릎 아래 정강이 부분이 균형을 이룹니다.",
+                "각국의 유명한 암말은 앞몸집의 생김새도 훌륭하지만 그에 못지않게 잘 발달된 엉덩이를 가지고 있습니다. 암말을 살필 때에는 이 사실을 염두해 두는 것도 좋습니다.",
+                "목을 잘 쓰는 말은 달릴 때 피로가 적고 자연스러운 질주를 할 수 있습니다. 길이가 적당하고 날씬한 느낌을 주며, 피부가 얇고 혈관이 보이는 목을 가진 말이 좋은 말입니다.",
+                "암말은 수말에 비해 땀의 양이 적습니다. 특히 암말이 흥분한 듯한 행동을 보이면서 땀에 흠뻑 젖어 있다면 경계할 필요가 있습니다. 수말의 경우에는 복부와 뒷다리 사이에 땀이 흐르기도 합니다.",
+                "꼬리가 엉덩이 끝의 꼬리 시작부분부터 끝까지 움직임이 흐느적거리지 않고 탄력적으로 움직이며 S자형을 이루는 말은 컨디션이 좋은 상태입니다.",
+                "털에 윤기가 흐르는 말은 건강상태와 컨디션이 좋다고 볼 수 있습니다. 다만, 검은 털의 말은 상태가 나빠도 광택이 좋아보일 수 있으니 주의해야 합니다.",
+                "뒷다리를 내디딜 때 스프링이 튀듯 힘찬 느낌을 주는 말은 컨디션이 좋은 상태입니다.", 
+                "마필관리사가 잡고 있는 고삐를 가끔 옆으로 돌리거나 밑으로 내리면서 당기려는 말은 최고의 컨디션을 보이고 있는 말입니다.", 
+                "자신있는 말의 눈빛은 투지로 빛납니다. 말이 가끔 우뚝 서서 먼 곳을 바라보는 것은 멀리 달리고 싶다는 욕망의 표현입니다."]
+    })
+    st.table(data)
 
+with st.expander('렛츠런파크 입장안내'):
+    data = {
+        "입장요금안내": "경마일 2000원 (개별소비세, 교육세 및 부가세 포함)\n비경마일 무료",
+        "입장시간안내": pd.DataFrame({
+            "구분": ["주간경마", "야간경마"],
+            "금요일": ["09:30", "12:30"],
+            "토요일": ["09:30", "12:30"],
+            "일요일": ["09:30", "09:00"]
+        }),
+        "신청 시 유의사항": "단체이용 예약 시, 경마공원 방문에 관한 예약이며 시설물 관련 예약은 별도임!!\n★ 단체는 돗자리 대여가 불가하오니 돗자리를 준비하시기 바랍니다 ★",
+        "입장 시 유의사항": "- 입장권은 당일 1회에 한하여 유효합니다.\n- 입장료 환불사유 발생 시 입장권 소지자에 한해 환불하오니, 입장권을 반드시 소지하시기 바랍니다.\n\n미성년자 관람대 입장제한 안내(사행산업 영업장의 청소년 출입제한 강화조치)\n- 관람대 1층 편익시설 이용을 위한 일시 입장은 허용하되, 체류는 금지됩니다.\n- 단, 20~40세대 전용 공간으로 운영 중인 놀라운지(NOL LOUNGE)의 경우 미성년자 동반 입장(체류)이 가능합니다.",
+        "반입 금지 품목": "- 수행근거g : 한국마사회법 제47조 및 동법 시행령 제 25조\n\n인화성 물질 : 시너ㆍ각종 유류ㆍ가스ㆍ알콜 등\n주류 : 소주ㆍ맥주(캔맥주 포함) ㆍ양주ㆍ탁주 등\n위해 동물 : 개ㆍ고양이ㆍ기타 애완동물 등\n풍선ㆍ공 : 공을 이용한 스포츠 용품\n총포ㆍ도검ㆍ화약류 등 : 무기(흉기)류 ㆍ각종 공사연장ㆍ모방총기류ㆍ오토바이헬맷 등\n고음을 낼 수 있는 물건 : 확성기ㆍ호루라기ㆍ폭죽 등\n반입금지 품목 : 돗자리ㆍ유모차ㆍ자전거ㆍ킥보드ㆍ인라인 스케이트\n주의사항 : 관람대 내부 돗자리 및 유모차 사용제한\n기타 경마시행에 저해 될 수 있는 물건(품) : 향정신성물(품)질ㆍ각종 취사도구, 홍보/광고물, 바퀴이용 이동수단, 무선조종기(드론, RC카 등)"
+    }
 
-# FastAPI 백엔드 URL 설정
-backend_url = "http://localhost:8000"
+    for key, value in data.items():
+        st.write("**{}**".format(key))
+        st.write(value)
 
-# 경마 정보 조회 함수
-def get_horses():
-    try:
-        response = httpx.get(f"{backend_url}/horses")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error("Failed to fetch horse information")
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")    
-
-# 페이지 제목 설정
-st.set_page_config(page_title="경마 AI", page_icon="🏇")
-
-# 경마 설명
-st.title("경마 정보 AI")
-st.write("경마는 말들이 주어진 경주장에서 경주하는 스포츠입니다.")
-
-# 경주 목록 표시
-races = st.selectbox("경주 선택", ["경주 1", "경주 2", "경주 3"])
-
-# 경주 세부 정보 표시
-if races == "경주 1":
-  st.write("경주 1은 오늘 오후 3시에 시작합니다.")
-  st.write("총 10마리의 말이 참가합니다.")
-  st.write("궁금한 말을 선택해주세요!")
-
-elif races == "경주 2":
-  st.write("경주 2는 오늘 오후 4시에 시작합니다.")
-  st.write("총 10마리의 말이 참가합니다.")
-  st.write("궁금한 말을 선택해주세요!")
-
-elif races == "경주 3":
-  st.write("경주 3은 오늘 오후 5시에 시작합니다.")
-  st.write("총 6마리의 말이 참가합니다.")
-  st.write("궁금한 말을 선택해주세요!")
-
-# 베팅 양식 표시
-if races != "":
-  st.form("마권을 어느 정도 구입하셨나요?")
-  amount = st.number_input("숫자 입력")
-  horse = st.selectbox("말 선택", ["말 1", "말 2", "말 3", "말 4", "말 5", "말 6", "말 7", "말 8", "말 9", "말 10"])
-  st.button("결과 확인")
-
-#   if st.form_submit_button():
-#     st.write("결과입니다!")
-#     st.write("Good Luck!")    
-
-# 경마 정보 입력
-st.header("이번 주 출전정보")
-horse_id = st.text_input("검색하고 싶은 것을 입력하세요")
-
-def main():
-    # 경마 정보 조회
-    horses = get_horses()
-
-    # 경마 정보 출력
-    if horses:
-        st.header("경마 정보")
-        for horse in horses:
-            st.write(horse)
-
-# Streamlit 애플리케이션 실행
-if __name__ == '__main__':
-    main()
+with st.expander('우리 앱 사용 설명서'):
+    st.write('완성되면 게시')
